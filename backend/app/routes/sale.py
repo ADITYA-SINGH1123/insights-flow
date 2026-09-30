@@ -58,6 +58,7 @@ def create_sale(
         .filter(
             Product.id == sale_data.product_id
         )
+        .with_for_update()
         .first()
     )
 
@@ -110,9 +111,12 @@ def create_sale(
 
     db.add(new_sale)
 
-    db.commit()
-
-    db.refresh(new_sale)
+    try:
+        db.commit()
+        db.refresh(new_sale)
+    except Exception:
+        db.rollback()
+        raise
 
     return new_sale
 

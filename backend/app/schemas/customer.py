@@ -1,11 +1,21 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 
 class CustomerCreate(BaseModel):
-    name: str
+    name: str = Field(
+        ...,
+        min_length=2,
+        max_length=150
+    )
     email: EmailStr | None = None
-    phone: str | None = None
-    city: str | None = None
+    phone: str | None = Field(
+        default=None,
+        max_length=20
+    )
+    city: str | None = Field(
+        default=None,
+        max_length=100
+    )
 
 
 class CustomerResponse(BaseModel):

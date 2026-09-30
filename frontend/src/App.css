@@ -200,7 +200,10 @@ nav a.active {
   border-radius: 16px;
   padding: 22px;
   box-shadow: 0 5px 20px rgba(20, 30, 50, 0.04);
-  transition: 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .stat-card:hover {
@@ -246,6 +249,14 @@ nav a.active {
   border-radius: 16px;
   padding: 22px;
   box-shadow: 0 5px 20px rgba(20, 30, 50, 0.04);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.panel:hover {
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
 }
 
 .panel-header {
@@ -669,15 +680,16 @@ td {
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar h1 {
-    font-size: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .topbar {
     gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .topbar h1 {
+    font-size: 24px;
   }
 
   .revenue-chart {
@@ -701,6 +713,31 @@ td {
   .chart-value {
     font-size: 9px;
     padding: 4px 6px;
+  }
+
+  .panel {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  button,
+  .primary-btn,
+  .secondary-btn {
+    min-height: 40px;
   }
 }
 
@@ -789,14 +826,11 @@ td {
     height: 40px;
     margin: 14px auto 0;
     padding: 0;
+    font-size: 0;
   }
 
   .logout-btn span {
     font-size: 17px;
-  }
-
-  .logout-btn {
-    font-size: 0;
   }
 }
 
@@ -863,8 +897,9 @@ td {
   }
 }
 
-
-/* ===== Professional UI Polish ===== */
+/* =========================
+   PROFESSIONAL UI POLISH
+========================= */
 
 button,
 .secondary-btn,
@@ -888,21 +923,6 @@ button:active,
   transform: translateY(0);
 }
 
-.panel,
-.stat-card,
-.card {
-  transition:
-    box-shadow 0.2s ease,
-    transform 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.panel:hover,
-.stat-card:hover,
-.card:hover {
-  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
-}
-
 input,
 select,
 textarea {
@@ -916,64 +936,3 @@ select:focus,
 textarea:focus {
   outline: none;
 }
-
-
-/* ===== Responsive UI Polish ===== */
-
-@media (max-width: 900px) {
-  .sidebar {
-    width: 210px;
-  }
-
-  .main-content {
-    margin-left: 210px;
-  }
-}
-
-@media (max-width: 760px) {
-  .sidebar {
-    position: relative;
-    width: 100%;
-    height: auto;
-  }
-
-  .main-content {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .topbar {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .panel {
-    width: 100%;
-    overflow-x: auto;
-  }
-}
-
-@media (max-width: 520px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar {
-    align-items: flex-start;
-  }
-
-  .panel {
-    padding: 16px;
-  }
-
-  button,
-  .primary-btn,
-  .secondary-btn {
-    min-height: 40px;
-  }
-}
-

@@ -17,43 +17,14 @@ router = APIRouter(
 
 
 # =========================
-# Analytics Summary
+# Period Filter Helper
 # =========================
-@router.get("/summary")
-def analytics_summary(
-    period: str = Query("30"),
-    user_id: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    sales = db.query(Sale).all()
+def apply_period_filter(df, period):
+    if df.empty:
+        return df
 
-    if not sales:
-        return {
-            "total_revenue": 0,
-            "total_orders": 0,
-            "total_quantity": 0,
-            "average_order_value": 0
-        }
-
-    data = [
-        {
-            "id": sale.id,
-            "quantity": sale.quantity,
-            "total_amount": float(sale.total_amount),
-            "sale_date": sale.sale_date
-        }
-        for sale in sales
-    ]
-
-    df = pd.DataFrame(data)
-
-    # Convert sale date
-    df["sale_date"] = pd.to_datetime(df["sale_date"])
-
-    # Today's date
     today = pd.Timestamp.now().normalize()
 
-    # Apply period filter
     if period == "1":
         # Today
         df = df[
@@ -84,6 +55,53 @@ def analytics_summary(
             (df["sale_date"].dt.year == today.year) &
             (df["sale_date"].dt.month == today.month)
         ]
+
+    return df
+
+
+# =========================
+# Analytics Summary
+# =========================
+@router.get("/summary")
+def analytics_summary(
+    period: str = Query(
+        "30",
+        pattern="^(1|7|30|month)$"
+    ),
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    sales = db.query(Sale).all()
+
+    if not sales:
+        return {
+            "total_revenue": 0,
+            "total_orders": 0,
+            "total_quantity": 0,
+            "average_order_value": 0
+        }
+
+    data = [
+        {
+            "id": sale.id,
+            "quantity": sale.quantity,
+            "total_amount": float(sale.total_amount),
+            "sale_date": sale.sale_date
+        }
+        for sale in sales
+    ]
+
+    df = pd.DataFrame(data)
+
+    df["sale_date"] = pd.to_datetime(
+        df["sale_date"]
+    )
+
+    # Apply period filter
+    df = apply_period_filter(
+        df,
+        period
+    )
 
     # No sales in selected period
     if df.empty:
@@ -123,6 +141,10 @@ def analytics_summary(
 # =========================
 @router.get("/top-products")
 def top_products(
+    period: str = Query(
+        "30",
+        pattern="^(1|7|30|month)$"
+    ),
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -135,12 +157,26 @@ def top_products(
         {
             "product_id": sale.product_id,
             "quantity": sale.quantity,
-            "revenue": float(sale.total_amount)
+            "revenue": float(sale.total_amount),
+            "sale_date": sale.sale_date
         }
         for sale in sales
     ]
 
     df = pd.DataFrame(data)
+
+    df["sale_date"] = pd.to_datetime(
+        df["sale_date"]
+    )
+
+    # Apply selected period
+    df = apply_period_filter(
+        df,
+        period
+    )
+
+    if df.empty:
+        return []
 
     result = (
         df.groupby("product_id")
@@ -187,6 +223,10 @@ def top_products(
 # =========================
 @router.get("/monthly-sales")
 def monthly_sales(
+    period: str = Query(
+        "30",
+        pattern="^(1|7|30|month)$"
+    ),
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -209,6 +249,15 @@ def monthly_sales(
     df["sale_date"] = pd.to_datetime(
         df["sale_date"]
     )
+
+    # Apply selected period
+    df = apply_period_filter(
+        df,
+        period
+    )
+
+    if df.empty:
+        return []
 
     df["month"] = df["sale_date"].dt.strftime(
         "%Y-%m"
@@ -250,6 +299,10 @@ def monthly_sales(
 # =========================
 @router.get("/customers")
 def customer_analytics(
+    period: str = Query(
+        "30",
+        pattern="^(1|7|30|month)$"
+    ),
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -262,12 +315,26 @@ def customer_analytics(
         {
             "customer_id": sale.customer_id,
             "quantity": sale.quantity,
-            "revenue": float(sale.total_amount)
+            "revenue": float(sale.total_amount),
+            "sale_date": sale.sale_date
         }
         for sale in sales
     ]
 
     df = pd.DataFrame(data)
+
+    df["sale_date"] = pd.to_datetime(
+        df["sale_date"]
+    )
+
+    # Apply selected period
+    df = apply_period_filter(
+        df,
+        period
+    )
+
+    if df.empty:
+        return []
 
     result = (
         df.groupby("customer_id")
@@ -315,11 +382,12 @@ def customer_analytics(
 # =========================
 # Daily Sales Trends
 # =========================
-# Daily Sales Trends
-# =========================
 @router.get("/daily-sales")
 def daily_sales(
-    period: str = Query("30"),
+    period: str = Query(
+        "30",
+        pattern="^(1|7|30|month)$"
+    ),
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -343,39 +411,11 @@ def daily_sales(
         df["sale_date"]
     )
 
-    today = pd.Timestamp.now().normalize()
-
-    # Apply period filter
-    if period == "1":
-        # Today
-        df = df[
-            df["sale_date"].dt.normalize() == today
-        ]
-
-    elif period == "7":
-        # Last 7 days including today
-        start_date = today - pd.Timedelta(days=6)
-
-        df = df[
-            (df["sale_date"].dt.normalize() >= start_date) &
-            (df["sale_date"].dt.normalize() <= today)
-        ]
-
-    elif period == "30":
-        # Last 30 days including today
-        start_date = today - pd.Timedelta(days=29)
-
-        df = df[
-            (df["sale_date"].dt.normalize() >= start_date) &
-            (df["sale_date"].dt.normalize() <= today)
-        ]
-
-    elif period == "month":
-        # Current month
-        df = df[
-            (df["sale_date"].dt.year == today.year) &
-            (df["sale_date"].dt.month == today.month)
-        ]
+    # Apply selected period
+    df = apply_period_filter(
+        df,
+        period
+    )
 
     # No sales in selected period
     if df.empty:

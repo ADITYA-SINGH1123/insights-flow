@@ -73,7 +73,8 @@ function App () {
 
   // =========================
   // Customers
-  // =======================
+  // =========================
+
   const [customers, setCustomers] = useState([])
   const [customerSearch, setCustomerSearch] = useState('')
   const [customersLoading, setCustomersLoading] = useState(false)
@@ -81,17 +82,13 @@ function App () {
   const [showCustomerForm, setShowCustomerForm] = useState(false)
 
   const [newCustomerName, setNewCustomerName] = useState('')
-
   const [newCustomerEmail, setNewCustomerEmail] = useState('')
-
   const [newCustomerPhone, setNewCustomerPhone] = useState('')
-
   const [newCustomerCity, setNewCustomerCity] = useState('')
 
   const [customerSaving, setCustomerSaving] = useState(false)
 
   const [customerMessage, setCustomerMessage] = useState('')
-
   const [customerError, setCustomerError] = useState('')
 
   // =========================
@@ -114,6 +111,7 @@ function App () {
 
   const [saleMessage, setSaleMessage] = useState('')
   const [saleError, setSaleError] = useState('')
+
   const [analyticsPeriod, setAnalyticsPeriod] = useState('30')
 
   // =========================
@@ -154,14 +152,16 @@ function App () {
         return
       }
 
+      setLoading(true)
+
       try {
         setDashboardError('')
 
         const [summaryData, productsData, monthlyData, dailyData, salesData] =
           await Promise.all([
             getAnalyticsSummary(token, analyticsPeriod),
-            getTopProducts(token),
-            getMonthlySales(token),
+            getTopProducts(token, analyticsPeriod),
+            getMonthlySales(token, analyticsPeriod),
             getDailySales(token, analyticsPeriod),
             getRecentSales(token)
           ])
@@ -279,6 +279,9 @@ function App () {
     }
 
     try {
+      setLoading(true)
+      setDashboardError('')
+
       const [
         summaryData,
         topProductsData,
@@ -289,8 +292,8 @@ function App () {
         customerListData
       ] = await Promise.all([
         getAnalyticsSummary(token, analyticsPeriod),
-        getTopProducts(token),
-        getMonthlySales(token),
+        getTopProducts(token, analyticsPeriod),
+        getMonthlySales(token, analyticsPeriod),
         getDailySales(token, analyticsPeriod),
         getRecentSales(token),
         getProducts(token),
@@ -307,6 +310,10 @@ function App () {
       setCustomers(customerListData)
     } catch (error) {
       console.error('Dashboard refresh error:', error)
+
+      setDashboardError('Unable to refresh dashboard data. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -322,13 +329,11 @@ function App () {
 
     if (!customerId || !productId || !quantity) {
       setSaleError('Please fill all sale details.')
-
       return
     }
 
     if (Number(quantity) <= 0) {
       setSaleError('Quantity must be greater than 0.')
-
       return
     }
 
@@ -338,7 +343,6 @@ function App () {
 
     if (!selectedProduct) {
       setSaleError('Please select a valid product.')
-
       return
     }
 
@@ -346,7 +350,6 @@ function App () {
       setSaleError(
         `Only ${selectedProduct.stock_quantity} unit(s) available in stock.`
       )
-
       return
     }
 
@@ -407,11 +410,11 @@ function App () {
     setTopProducts([])
     setMonthlySales([])
     setDailySales([])
-
     setRecentSales([])
 
     setCustomers([])
     setProducts([])
+
     setShowSaleForm(false)
     setShowCustomerForm(false)
     setShowProductForm(false)
@@ -432,11 +435,13 @@ function App () {
     setNewCustomerEmail('')
     setNewCustomerPhone('')
     setNewCustomerCity('')
+
     setCustomerMessage('')
     setCustomerError('')
 
     setActivePage('dashboard')
   }
+
   // =========================
   // Create Customer
   // =========================
@@ -449,7 +454,6 @@ function App () {
 
     if (!newCustomerName.trim()) {
       setCustomerError('Customer name is required.')
-
       return
     }
 
@@ -483,6 +487,7 @@ function App () {
       setCustomerSaving(false)
     }
   }
+
   // =========================
   // Create Product
   // =========================
@@ -858,7 +863,7 @@ function App () {
                 : '0'}
             </h2>
 
-            <small className='positive'>↑ 10.1% this month</small>
+            <small>Current period performance</small>
           </div>
         </section>
 
@@ -1020,7 +1025,7 @@ function App () {
                       </td>
 
                       <td>
-                        <span className='status'>Completed</span>
+                        <span className='status'>Recorded</span>
                       </td>
                     </tr>
                   ))
@@ -1535,7 +1540,7 @@ function App () {
                       </td>
 
                       <td>
-                        <span className='status'>Completed</span>
+                        <span className='status'>Recorded</span>
                       </td>
                     </tr>
                   ))
@@ -1564,6 +1569,7 @@ function App () {
   // =========================
   // Products Page
   // =========================
+
   function renderProductsPage () {
     const totalProducts = products.length
 
@@ -2038,6 +2044,7 @@ function App () {
   // =========================
   // Customers Page
   // =========================
+
   function renderCustomersPage () {
     const totalCustomers = customers.length
 
@@ -2489,25 +2496,24 @@ function App () {
 
   function renderPlaceholderPage (title, eyebrow, description) {
     const totalRevenue = Number(summary?.total_revenue || 0)
-    const totalOrders = Number(summary?.total_orders || 0)
-    const totalQuantity = Number(summary?.total_quantity || 0)
-    const averageOrderValue = Number(summary?.average_order_value || 0)
 
-    const maxMonthlyRevenue = Math.max(
-      ...monthlySales.map(item => Number(item.revenue || 0)),
-      1
-    )
+    const totalOrders = Number(summary?.total_orders || 0)
+
+    const totalQuantity = Number(summary?.total_quantity || 0)
+
+    const averageOrderValue = Number(summary?.average_order_value || 0)
 
     return (
       <>
         <header className='topbar'>
           <div>
-            <p className='eyebrow'>BUSINESS INTELLIGENCE</p>
-            <h1>Analytics</h1>
-            <p className='subtitle'>
-              Explore detailed business performance analytics.
-            </p>
+            <p className='eyebrow'>{eyebrow}</p>
+
+            <h1>{title}</h1>
+
+            <p className='subtitle'>{description}</p>
           </div>
+
           <div className='analytics-period'>
             <button
               className={
@@ -2560,37 +2566,45 @@ function App () {
         </header>
 
         {/* Analytics Summary */}
+
         <section className='stats-grid'>
           <div className='stat-card'>
             <span>Total Revenue</span>
+
             <strong>₹{totalRevenue.toLocaleString('en-IN')}</strong>
+
             <small>Overall sales revenue</small>
           </div>
 
           <div className='stat-card'>
             <span>Total Orders</span>
+
             <strong>{totalOrders.toLocaleString('en-IN')}</strong>
-            <small>Completed sales</small>
+
+            <small>Recorded sales</small>
           </div>
 
           <div className='stat-card'>
             <span>Total Quantity</span>
+
             <strong>{totalQuantity.toLocaleString('en-IN')}</strong>
+
             <small>Units sold</small>
           </div>
 
           <div className='stat-card'>
             <span>Average Order Value</span>
+
             <strong>
               ₹
               {averageOrderValue.toLocaleString('en-IN', {
                 maximumFractionDigits: 0
               })}
             </strong>
+
             <small>Revenue per order</small>
           </div>
         </section>
-        {/* Daily Sales */}
 
         {/* Daily Sales */}
 
@@ -2598,13 +2612,26 @@ function App () {
           <div className='panel-header'>
             <div>
               <p className='eyebrow'>DAILY PERFORMANCE</p>
+
               <h2>Daily Sales</h2>
             </div>
           </div>
 
-          <div style={{ width: '100%', height: 320, padding: '20px' }}>
+          <div
+            style={{
+              width: '100%',
+              height: 320,
+              padding: '20px'
+            }}
+          >
             {dailySales.length === 0 ? (
-              <p style={{ color: '#8992a2' }}>No daily sales data available.</p>
+              <p
+                style={{
+                  color: '#8992a2'
+                }}
+              >
+                No daily sales data available.
+              </p>
             ) : (
               <ResponsiveContainer width='100%' height='100%'>
                 <BarChart
@@ -2616,10 +2643,13 @@ function App () {
                   }))}
                 >
                   <CartesianGrid strokeDasharray='3 3' />
+
                   <XAxis dataKey='date' />
+
                   <YAxis />
+
                   <Tooltip
-                    formatter={(value, name, props) => {
+                    formatter={(value, name) => {
                       if (name === 'Revenue') {
                         return [
                           `₹${Number(value).toLocaleString('en-IN')}`,
@@ -2640,8 +2670,11 @@ function App () {
                   />
 
                   <Legend />
+
                   <Bar dataKey='revenue' name='Revenue' radius={[6, 6, 0, 0]} />
+
                   <Bar dataKey='orders' name='Orders' radius={[6, 6, 0, 0]} />
+
                   <Bar
                     dataKey='quantity'
                     name='Quantity'
@@ -2654,16 +2687,29 @@ function App () {
         </section>
 
         {/* Monthly Revenue */}
+
         <section className='panel'>
           <div className='panel-header'>
             <div>
               <p className='eyebrow'>REVENUE TREND</p>
+
               <h2>Monthly Revenue</h2>
             </div>
           </div>
-          <div style={{ width: '100%', height: 320, padding: '20px' }}>
+
+          <div
+            style={{
+              width: '100%',
+              height: 320,
+              padding: '20px'
+            }}
+          >
             {monthlySales.length === 0 ? (
-              <p style={{ color: '#8992a2' }}>
+              <p
+                style={{
+                  color: '#8992a2'
+                }}
+              >
                 No monthly sales data available.
               </p>
             ) : (
@@ -2698,10 +2744,12 @@ function App () {
         </section>
 
         {/* Top Products */}
+
         <section className='panel'>
           <div className='panel-header'>
             <div>
               <p className='eyebrow'>PRODUCT PERFORMANCE</p>
+
               <h2>Top Products</h2>
             </div>
           </div>
@@ -2729,7 +2777,7 @@ function App () {
 
                 <tbody>
                   {topProducts.map((product, index) => (
-                    <tr key={index}>
+                    <tr key={product.product_id || index}>
                       <td>
                         <strong>
                           {product.name || product.product_name || 'Product'}
@@ -2751,6 +2799,7 @@ function App () {
                           product.revenue || product.total_revenue || 0
                         ).toLocaleString('en-IN')}
                       </td>
+
                       <td>
                         <div
                           style={{
@@ -2793,6 +2842,7 @@ function App () {
       </>
     )
   }
+
   // =========================
   // Main Application
   // =========================

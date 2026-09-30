@@ -1,12 +1,21 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
 from datetime import datetime
 
 
 class SaleCreate(BaseModel):
-    customer_id: int
-    product_id: int
-    quantity: int
+    customer_id: int = Field(
+        ...,
+        gt=0
+    )
+    product_id: int = Field(
+        ...,
+        gt=0
+    )
+    quantity: int = Field(
+        ...,
+        gt=0
+    )
 
 
 class SaleResponse(BaseModel):

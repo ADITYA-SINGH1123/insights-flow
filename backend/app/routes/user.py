@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse,LoginRequest
+from app.schemas.user import UserCreate, UserResponse, LoginRequest
 from app.core.security import (
     hash_password,
     verify_password,
@@ -40,8 +40,13 @@ def register_user(
     )
 
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+
+    try:
+        db.commit()
+        db.refresh(new_user)
+    except Exception:
+        db.rollback()
+        raise
 
     return new_user
 
@@ -72,6 +77,8 @@ def login_user(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+
 @router.get("/me")
 def get_my_profile(
     user_id: str = Depends(get_current_user),
@@ -92,4 +99,4 @@ def get_my_profile(
         "name": user.name,
         "email": user.email,
         "is_active": user.is_active
-    }    
+    }
