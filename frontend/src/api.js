@@ -71,15 +71,17 @@ export async function getAnalyticsSummary (token, period = '30') {
 // =========================
 // Top Products
 // =========================
-
-export async function getTopProducts (token) {
-  const response = await fetch(`${API_BASE_URL}/api/analytics/top-products`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+export async function getTopProducts (token, period = '30') {
+  const response = await fetch(
+    `${API_BASE_URL}/api/analytics/top-products?period=${period}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     }
-  })
+  )
 
   if (!response.ok) {
     throw new Error('Failed to fetch top products')
@@ -91,15 +93,17 @@ export async function getTopProducts (token) {
 // =========================
 // Monthly Sales
 // =========================
-
-export async function getMonthlySales (token) {
-  const response = await fetch(`${API_BASE_URL}/api/analytics/monthly-sales`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+export async function getMonthlySales (token, period = '30') {
+  const response = await fetch(
+    `${API_BASE_URL}/api/analytics/monthly-sales?period=${period}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     }
-  })
+  )
 
   if (!response.ok) {
     throw new Error('Failed to fetch monthly sales')
@@ -107,7 +111,6 @@ export async function getMonthlySales (token) {
 
   return response.json()
 }
-
 // =========================
 // Recent Sales
 // =========================
